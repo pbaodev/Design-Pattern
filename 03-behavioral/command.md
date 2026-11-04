@@ -2,15 +2,15 @@
 
 > **Nhóm:** Behavioral · [← Mục lục](../README.md)
 
-**Một câu:** **Đóng gói một yêu cầu thành object** chứa đủ thông tin để thực hiện nó. Nhờ vậy yêu cầu có thể được lưu lại, xếp hàng, chạy sau hoặc **hoàn tác (undo)**.
+**Purpose:** Biến một request thành **một object độc lập** chứa đầy đủ thông tin về request đó. Nhờ vậy có thể truyền request như tham số, hoãn hoặc xếp hàng việc thực thi, và hỗ trợ undo.
 
-**Ví dụ đời thường:** Gọi món ở nhà hàng. Người phục vụ ghi order ra giấy (command), tờ giấy được xếp vào hàng chờ của bếp, rồi đầu bếp làm theo. Người phục vụ không cần biết nấu, và order có thể xếp hàng hoặc bị hủy.
+**Analogy:** Gọi món ở nhà hàng: người phục vụ ghi order ra phiếu (command) và đưa vào hàng chờ của bếp, đầu bếp nấu theo phiếu. Người phục vụ không cần biết nấu, còn phiếu có thể xếp hàng hoặc bị hủy.
 
 ---
 
 ## 1. Problem
 
-Một text editor có nút **Paste**, phím **Ctrl+V** và menu **Edit → Paste**. Cả ba đều làm cùng một việc, và người dùng cần **Ctrl+Z** để hoàn tác.
+Một text editor có nút **Paste**, phím **Ctrl+V** và menu **Edit → Paste**. Cả ba cùng thực hiện một thao tác, và người dùng cần **Ctrl+Z** để hoàn tác.
 
 ```python
 def on_paste_button():
@@ -22,8 +22,8 @@ def on_ctrl_v():
 def on_menu_paste():
     editor.text += clipboard       # lại copy
 
-# Ctrl+Z? Không có gì để hoàn tác, vì thao tác chạy xong là "biến mất",
-# không ai nhớ đã làm gì hay trạng thái trước đó ra sao.
+# Ctrl+Z? Không hoàn tác được: thao tác không được lưu lại,
+# nên không biết đã làm gì và trạng thái trước đó ra sao.
 ```
 
 - Logic bị **lặp lại** ở mọi nơi kích hoạt hành động.
@@ -33,8 +33,8 @@ def on_menu_paste():
 ## 2. Solution
 
 1. Mỗi thao tác là **một class Command** có `execute()` và `undo()`.
-2. Command **lưu đủ thông tin**: object nhận lệnh (*receiver*), tham số, và dữ liệu backup để hoàn tác.
-3. Nơi ra lệnh (*invoker*: nút bấm, phím tắt) chỉ cần gọi `execute()`, không cần biết bên trong làm gì.
+2. Command **lưu đủ thông tin**: object nhận lệnh (_receiver_), tham số, và dữ liệu backup để hoàn tác.
+3. Nơi ra lệnh (_invoker_: nút bấm, phím tắt) chỉ cần gọi `execute()`, không cần biết bên trong làm gì.
 4. Một **history** lưu các command đã chạy. Undo nghĩa là lấy command cuối ra và gọi `undo()`.
 
 ```mermaid
@@ -153,7 +153,7 @@ history.redo()
 print(editor.text)    # Xin chào thế giới
 ```
 
-### Pythonic hơn: không cần undo thì dùng hàm
+### Pythonic approach: không cần undo thì dùng hàm
 
 Nếu chỉ cần **xếp hàng hoặc chạy sau** mà không cần undo, `functools.partial` hoặc closure là đủ để đóng gói "việc cần làm":
 
@@ -168,29 +168,29 @@ jobs = [                                   # hàng đợi các "command"
     partial(send_email, "binh@example.com", "Hóa đơn tháng 10"),
 ]
 for job in jobs:
-    job()                                  # chạy khi nào tùy bạn
+    job()                                  # chạy vào thời điểm tùy ý
 ```
 
 ## 4. Trade-offs
 
-| ✅ Ưu điểm | ❌ Nhược điểm |
-|---|---|
-| Làm được undo/redo | Mỗi thao tác cần 1 class, số class tăng nhanh |
-| Tách nơi *ra lệnh* (UI) khỏi nơi *thực hiện* (Editor) | Undo khó khi thao tác có side effect bên ngoài: email đã gửi thì không "thu hồi" được, phải có hành động bù trừ |
-| Xếp hàng đợi, lên lịch, retry, ghi log để chạy lại (replay) | Lưu dữ liệu backup để undo tốn bộ nhớ |
-| Gộp nhiều command thành một *macro* | |
-| Open/Closed: thêm command mới không phải sửa invoker | |
+| ✅ Ưu điểm                                                  | ❌ Nhược điểm                                                                                                 |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Làm được undo/redo                                          | Mỗi thao tác cần 1 class, số class tăng nhanh                                                                 |
+| Tách nơi _ra lệnh_ (UI) khỏi nơi _thực hiện_ (Editor)       | Undo khó khi thao tác có side effect bên ngoài: email đã gửi không thể thu hồi, phải dùng compensating action |
+| Xếp hàng đợi, lên lịch, retry, ghi log để chạy lại (replay) | Lưu dữ liệu backup để undo tốn bộ nhớ                                                                         |
+| Gộp nhiều command thành một _macro_                         |                                                                                                               |
+| Open/Closed: thêm command mới không phải sửa invoker        |                                                                                                               |
 
-- **Nên dùng khi:** cần undo/redo; cần đưa thao tác vào hàng đợi, lên lịch hoặc retry; cần ghi log thao tác để audit hoặc replay.
-- **Không nên dùng khi:** thao tác đơn giản, gọi thẳng là xong, không cần lịch sử hay hàng đợi.
+- **Use when:** cần undo/redo; cần đưa thao tác vào hàng đợi, lên lịch hoặc retry; cần ghi log thao tác để audit hoặc replay.
+- **Avoid when(không nên dùng khi):** thao tác đơn giản, gọi thẳng là xong, không cần lịch sử hay hàng đợi.
 
-## 5. Ngoài thực tế
+## 5. Real-world usage
 
 - Ctrl+Z / Ctrl+Y trong mọi editor.
 - Task của Celery/RQ: command được serialize rồi đưa vào queue cho worker chạy sau.
 - Migration của Alembic/Django: `upgrade()` / `downgrade()` chính là `execute()` / `undo()`.
-- Chữ *Command* trong CQRS cũng mang đúng ý nghĩa này.
-- **Dễ nhầm với:** **Strategy** (xem ở [Mục lục](../README.md#các-pattern-dễ-nhầm)). Command cũng hay đi cùng **Memento**: Memento lưu *snapshot trạng thái* để undo, còn ở đây mỗi command tự lưu phần dữ liệu cần để hoàn tác.
+- _Command_ trong CQRS mang cùng ý nghĩa.
+- **Commonly confused with:** **Strategy** (xem ở [Mục lục](../README.md#các-pattern-dễ-nhầm)). Command cũng hay đi cùng **Memento**: Memento lưu _snapshot trạng thái_ để undo, còn ở đây mỗi command tự lưu phần dữ liệu cần để hoàn tác.
 
 ---
 

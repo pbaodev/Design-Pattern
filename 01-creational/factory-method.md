@@ -2,9 +2,9 @@
 
 > **Nhóm:** Creational · [← Mục lục](../README.md)
 
-**Một câu:** Định nghĩa một method để **tạo object** ở class cha, và để **subclass quyết định** tạo object của class cụ thể nào.
+**Purpose:** Cung cấp một interface để tạo object ở class cha, nhưng cho phép **subclass thay đổi loại object** được tạo ra.
 
-**Ví dụ đời thường:** Một chuỗi nhà hàng có chung quy trình phục vụ: nhận order, làm món, mang ra bàn. Còn *món cụ thể* do từng chi nhánh tự quyết: chi nhánh Ý làm pizza, chi nhánh Việt làm phở.
+**Analogy:** Một chuỗi nhà hàng có chung quy trình phục vụ: nhận order, làm món, mang ra bàn. Còn _món cụ thể_ do từng chi nhánh tự quyết: chi nhánh Ý làm pizza, chi nhánh Việt làm phở.
 
 ---
 
@@ -31,7 +31,7 @@ class OrderService:
 
 ## 2. Solution
 
-1. Tạo **interface chung** cho mọi loại sản phẩm (`Notification`).
+1. Tạo **interface chung** cho mọi product (`Notification`).
 2. Class cha (`Notifier`) chứa logic nghiệp vụ và **gọi một method trừu tượng** `create_notification()` thay vì gọi trực tiếp `EmailSender()`.
 3. Mỗi **subclass override** method đó để trả về sản phẩm cụ thể.
 
@@ -108,7 +108,7 @@ confirm_order(SMSNotifier(), "0901234567")         # 📱 SMS → 0901234567: [M
 
 **Muốn thêm kênh Zalo?** Chỉ cần viết thêm `ZaloNotification` và `ZaloNotifier`, không phải sửa dòng code cũ nào.
 
-### Pythonic hơn: Simple Factory với dict
+### Pythonic approach: Simple Factory với dict
 
 Trong Python, class là object và gọi được như hàm. Vì vậy khi cần chọn class theo input hoặc config, một dict là đủ:
 
@@ -124,24 +124,24 @@ def create_notification(channel: str) -> Notification:
 create_notification("sms").send("0901234567", "Xin chào")
 ```
 
-Đây là **Simple Factory**, chưa phải Factory Method chuẩn GoF, nhưng là cách phổ biến nhất trong code Python. Factory Method (dùng subclass) hợp hơn khi bạn viết **framework hoặc thư viện** và muốn người dùng tự override cách tạo object.
+Đây là **Simple Factory**, không phải Factory Method theo GoF, nhưng là cách phổ biến nhất trong code Python. Factory Method (dùng subclass) phù hợp hơn khi viết **framework hoặc thư viện** cần cho người dùng override cách tạo object.
 
 ## 4. Trade-offs
 
-| ✅ Ưu điểm | ❌ Nhược điểm |
-|---|---|
-| Tách việc *tạo* object khỏi việc *dùng* object (loose coupling) | Thêm nhiều class: mỗi product cần thêm 1 creator |
-| Open/Closed: thêm loại mới không sửa code cũ | Quá mức cần thiết nếu chỉ có 1–2 loại và hiếm khi đổi |
-| Code khởi tạo nằm tập trung ở 1 chỗ | |
+| ✅ Ưu điểm                                                      | ❌ Nhược điểm                                         |
+| --------------------------------------------------------------- | ----------------------------------------------------- |
+| Tách việc _tạo_ object khỏi việc _dùng_ object (loose coupling) | Thêm nhiều class: mỗi product cần thêm 1 creator      |
+| Open/Closed: thêm loại mới không sửa code cũ                    | Quá mức cần thiết nếu chỉ có 1–2 loại và hiếm khi đổi |
+| Code khởi tạo nằm tập trung ở 1 chỗ                             |                                                       |
 
-- **Nên dùng khi:** chưa biết trước sẽ có những loại object nào, hoặc muốn cho người dùng framework mở rộng cách tạo object.
-- **Không nên dùng khi:** chỉ có 1 loại object và gần như không đổi.
+- **Use when:** chưa biết trước sẽ có những loại object nào, hoặc muốn cho người dùng framework mở rộng cách tạo object.
+- **Avoid when(không nên dùng khi):** chỉ có 1 loại object và gần như không đổi.
 
-## 5. Ngoài thực tế
+## 5. Real-world usage
 
 - Django class-based views: `get_form()` và `get_queryset()` là các factory method để bạn override.
 - Django REST Framework: `get_serializer()` trong `GenericAPIView`.
-- **Dễ nhầm với:** **Abstract Factory**, pattern tạo cả một *họ* object đi cùng nhau (ví dụ `Button` và `Checkbox` cùng theme Dark). Factory Method chỉ tạo *1 loại* object.
+- **Commonly confused with:** **Abstract Factory**, pattern tạo cả một _họ_ object đi cùng nhau (ví dụ `Button` và `Checkbox` cùng theme Dark). Factory Method chỉ tạo _1 loại_ object.
 
 ---
 

@@ -2,9 +2,9 @@
 
 > **SOLID** · [← Tổng quan SOLID](README.md)
 
-**Một câu:** Code nên **mở để mở rộng** (thêm hành vi mới) nhưng **đóng để sửa đổi** (không phải sửa code cũ đã chạy ổn).
+**Definition:** Code nên **mở để mở rộng** (thêm hành vi mới) nhưng **đóng để sửa đổi** (không phải sửa code cũ đã chạy ổn).
 
-**Ví dụ đời thường:** Máy khoan có thể thay mũi. Muốn khoan gỗ hay bê tông, bạn chỉ cần lắp mũi khác, không ai mổ máy khoan ra để sửa.
+**Analogy:** Máy khoan thay được mũi: khoan gỗ hay bê tông chỉ cần lắp mũi khác, không phải tháo máy ra sửa.
 
 ---
 
@@ -23,7 +23,7 @@ class ReportExporter:
 ```
 
 - Mỗi lần thêm định dạng là phải **sửa hàm đã chạy ổn**, và phải **test lại tất cả** định dạng cũ.
-- Hàm cứ phình to dần. Hai người cùng thêm định dạng mới thì bị conflict ở cùng một chỗ.
+- Hàm ngày càng phình to, và hai người cùng thêm định dạng sẽ conflict ở cùng một chỗ.
 
 ## 2. Solution
 
@@ -98,19 +98,19 @@ print(service.export(rows, "md"))
 
 | ✅ Được | ❌ Mất |
 |---|---|
-| Thêm tính năng mà không đụng code cũ đã test, nên ít lỗi hồi quy | Phải **đoán trước điểm mở rộng**: đoán sai thì có abstraction thừa |
+| Thêm tính năng không phải sửa code đã test, giảm regression | Phải **đoán trước điểm mở rộng**: đoán sai thì có abstraction thừa |
 | Mỗi biến thể nằm riêng, dễ test | Nhiều class hơn |
 | Nhiều người làm song song mà không conflict | Không thể "đóng" với **mọi** kiểu thay đổi |
 
-**Thực dụng: Rule of Three.** Lần đầu cứ viết thẳng. Lần thứ hai thì để ý. Đến lần thứ ba phải thêm một biến thể ở cùng chỗ, khi đó mới refactor theo OCP.
+**In practice: Rule of Three.** Lần đầu viết trực tiếp, lần thứ hai ghi nhận, đến lần thứ ba phải thêm biến thể ở cùng một chỗ thì mới refactor theo OCP.
 
-## 5. Dấu hiệu vi phạm và liên hệ pattern
+## 5. Code smells & related patterns
 
-**Dấu hiệu:**
+**Code smells:**
 - Chuỗi `if/elif` hoặc `match` theo loại (`type`, `kind`, `fmt`), cứ thêm loại mới là phải sửa.
 - Thêm một loại mới phải sửa nhiều file cùng lúc (*shotgun surgery*).
 
-**Liên hệ pattern.** OCP là nguyên lý được nhiều pattern hiện thực nhất:
+**Related patterns:** OCP là nguyên lý được nhiều pattern hiện thực nhất:
 - [Strategy](../03-behavioral/strategy.md): ví dụ ở trên chính là Strategy kết hợp một registry.
 - [Decorator](../02-structural/decorator.md): thêm hành vi mà không sửa class.
 - [Factory Method](../01-creational/factory-method.md): thêm loại sản phẩm mà không sửa creator.
@@ -118,7 +118,7 @@ print(service.export(rows, "md"))
 
 ## 6. Bài tập
 
-Hãy thêm loại khách `"student"` được giảm 5% **mà không sửa hàm tính giảm giá**. Gợi ý: phải refactor một lần trước đã.
+Hãy thêm loại khách `"student"` được giảm 5% **mà không sửa hàm tính giảm giá**. Gợi ý: cần refactor hàm này một lần trước.
 
 ```python
 def calculate_discount(customer_type: str, amount: int) -> int:

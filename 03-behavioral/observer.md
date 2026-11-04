@@ -2,15 +2,15 @@
 
 > **Nhóm:** Behavioral · [← Mục lục](../README.md)
 
-**Một câu:** Cho phép nhiều object **đăng ký theo dõi** một object khác, và **tự động được thông báo** mỗi khi object đó thay đổi.
+**Purpose:** Định nghĩa một **cơ chế subscription** để thông báo cho nhiều object về các sự kiện xảy ra với object mà chúng đang theo dõi.
 
-**Ví dụ đời thường:** Đăng ký một kênh YouTube. Khi có video mới, kênh tự báo cho bạn; bạn không phải ngày nào cũng vào kiểm tra. Hủy đăng ký lúc nào cũng được.
+**Analogy:** Đăng ký một kênh YouTube: khi có video mới, YouTube gửi thông báo thay vì bạn phải tự vào kiểm tra hằng ngày. Bạn có thể hủy đăng ký bất cứ lúc nào.
 
 ---
 
 ## 1. Problem
 
-Khi giá cổ phiếu thay đổi, cần cập nhật bảng giá, gửi cảnh báo nếu giá chạm ngưỡng và ghi log. Cách làm thô:
+Khi giá cổ phiếu thay đổi, cần cập nhật bảng giá, gửi cảnh báo nếu giá chạm ngưỡng và ghi log. Cách làm trực tiếp:
 
 ```python
 class Stock:
@@ -23,7 +23,7 @@ class Stock:
 ```
 
 - `Stock` bị **gắn chặt** với mọi module cần nhận tin.
-- Cách ngược lại là để các module liên tục hỏi "giá đổi chưa?" (*polling*), vừa lãng phí vừa bị trễ.
+- Cách thay thế là để các module liên tục kiểm tra giá (_polling_): tốn tài nguyên và có độ trễ.
 
 ## 2. Solution
 
@@ -123,9 +123,9 @@ fpt.set_price(126_000)
 
 **Muốn thêm module "AI dự đoán"?** Viết class mới implement `Subscriber` rồi `subscribe()`. Không phải sửa `Stock`.
 
-### Pythonic hơn: Event Bus với callable
+### Pythonic approach: Event Bus với callable
 
-Subscriber có thể chỉ là một **hàm**, lambda hoặc bound method. Thêm **tên sự kiện** vào nữa là có một event bus đơn giản:
+Subscriber có thể chỉ là một **hàm**, lambda hoặc bound method. Gom subscriber theo **tên sự kiện**, ta có một event bus đơn giản:
 
 ```python
 from collections import defaultdict
@@ -151,24 +151,24 @@ bus.emit("price_changed", symbol="VNM", price=68_000)   # VNM: 68,000
 
 ## 4. Trade-offs
 
-| ✅ Ưu điểm | ❌ Nhược điểm |
-|---|---|
-| Open/Closed: thêm subscriber mới không sửa publisher | Thứ tự thông báo không được đảm bảo, đừng viết code phụ thuộc vào nó |
-| Loose coupling: publisher chỉ biết interface | Khó debug khi nhiều tầng: ai đang nghe, ai gây ra hiệu ứng này? |
-| Đăng ký và hủy đăng ký lúc runtime | Quên `unsubscribe` thì publisher vẫn giữ reference, gây **memory leak** |
-| | Gọi đồng bộ: một subscriber lỗi hoặc chậm sẽ chặn các subscriber sau, cần try/except hoặc queue |
+| ✅ Ưu điểm                                           | ❌ Nhược điểm                                                                                    |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Open/Closed: thêm subscriber mới không sửa publisher | Thứ tự thông báo không được đảm bảo, đừng viết code phụ thuộc vào nó                             |
+| Loose coupling: publisher chỉ biết interface         | Khó debug khi thông báo lan qua nhiều tầng: khó biết ai đang subscribe và side effect đến từ đâu |
+| Đăng ký và hủy đăng ký lúc runtime                   | Quên `unsubscribe` thì publisher vẫn giữ reference, gây **memory leak**                          |
+|                                                      | Gọi đồng bộ: một subscriber lỗi hoặc chậm sẽ chặn các subscriber sau, cần try/except hoặc queue  |
 
-- **Nên dùng khi:** thay đổi của một object cần cập nhật nhiều object khác mà không biết trước số lượng; hệ thống event-driven; UI.
-- **Không nên dùng khi:** chỉ có đúng 1 bên nhận cố định. Gọi thẳng sẽ rõ ràng hơn.
+- **Use when:** thay đổi của một object cần cập nhật nhiều object khác mà không biết trước số lượng; hệ thống event-driven; UI.
+- **Avoid when(không nên dùng khi):** chỉ có đúng một receiver cố định; gọi trực tiếp sẽ rõ ràng hơn.
 
-## 5. Ngoài thực tế
+## 5. Real-world usage
 
 - Django signals: `post_save`, `pre_delete`...
 - Sự kiện GUI: `addEventListener` trong JS, `bind` trong Tkinter.
 - RxJS / ReactiveX, state management trong frontend (Redux `subscribe`, Vue reactivity).
 - WebSocket đẩy giá chứng khoán realtime tới client.
-- **Dễ nhầm với:** **Pub/Sub qua message broker** như Kafka hay RabbitMQ. Ở Observer, publisher *giữ trực tiếp* danh sách subscriber. Ở Pub/Sub, hai bên *không biết nhau* mà giao tiếp qua broker ở giữa, nhờ vậy chạy được trên nhiều service khác nhau.
+- **Commonly confused with:** **Pub/Sub qua message broker** như Kafka hay RabbitMQ. Ở Observer, publisher _giữ trực tiếp_ danh sách subscriber. Ở Pub/Sub, hai bên _không biết nhau_ mà giao tiếp qua broker ở giữa, nhờ vậy chạy được trên nhiều service khác nhau.
 
 ---
 
-[← Strategy](strategy.md) · [Mục lục](../README.md) · [Command →](command.md)
+[← Template Method](template-method.md) · [Mục lục](../README.md) · [Command →](command.md)

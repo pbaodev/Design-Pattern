@@ -2,9 +2,9 @@
 
 > **Nhóm:** Behavioral · [← Mục lục](../README.md)
 
-**Một câu:** Đưa mỗi thuật toán vào **một class riêng** có **chung interface**, để có thể **hoán đổi** thuật toán lúc runtime.
+**Purpose:** Định nghĩa một họ thuật toán, đưa mỗi thuật toán vào một class riêng và làm cho các object của chúng **hoán đổi được cho nhau**.
 
-**Ví dụ đời thường:** Đi từ nhà ra sân bay, bạn có thể đi xe máy, taxi hoặc xe buýt. Mục đích như nhau, chỉ khác cách đi, và bạn chọn theo thời gian hoặc ngân sách.
+**Analogy:** Ra sân bay có thể đi xe máy, taxi hoặc xe buýt: cùng đích đến, khác cách đi, chọn tùy thời gian và ngân sách.
 
 ---
 
@@ -31,8 +31,8 @@ class ShippingCalculator:
 ## 2. Solution
 
 1. Định nghĩa **interface chung** cho mọi thuật toán (`ShippingStrategy`).
-2. Mỗi thuật toán là **một class riêng** (*concrete strategy*).
-3. Class chính (*context*, ở đây là `Order`) **giữ một strategy** và **giao việc** cho nó, không tự tính.
+2. Mỗi thuật toán là **một class riêng** (_concrete strategy_).
+3. Class chính (_context_, ở đây là `Order`) **giữ một strategy** và **giao việc** cho nó, không tự tính.
 4. **Client chọn** strategy nào để đưa vào context.
 
 ```mermaid
@@ -104,7 +104,7 @@ print(order.shipping_fee())             # 55000
 
 **Muốn thêm "giao trong ngày"?** Chỉ cần viết class `SameDayShipping`, không động vào `Order` hay các strategy khác.
 
-### Pythonic hơn: strategy là một hàm
+### Pythonic approach: strategy là một hàm
 
 Trong Python, hàm là first-class object nên strategy có thể chỉ là một **hàm**:
 
@@ -133,23 +133,23 @@ fee = STRATEGIES["express"](2, 30)     # chọn theo input của user hoặc con
 
 ## 4. Trade-offs
 
-| ✅ Ưu điểm | ❌ Nhược điểm |
-|---|---|
-| Đổi thuật toán lúc runtime | Client phải hiểu các strategy khác nhau thế nào để chọn đúng |
-| Bỏ được chuỗi if/elif dài | Thêm nhiều class nhỏ, quá mức nếu chỉ có 2–3 nhánh ít đổi |
-| Open/Closed: thêm thuật toán = thêm class | Trong Python, nhiều khi một hàm là đủ |
-| Test từng thuật toán riêng biệt | |
+| ✅ Ưu điểm                                | ❌ Nhược điểm                                                |
+| ----------------------------------------- | ------------------------------------------------------------ |
+| Đổi thuật toán lúc runtime                | Client phải hiểu các strategy khác nhau thế nào để chọn đúng |
+| Bỏ được chuỗi if/elif dài                 | Thêm nhiều class nhỏ, quá mức nếu chỉ có 2–3 nhánh ít đổi    |
+| Open/Closed: thêm thuật toán = thêm class | Trong Python, nhiều khi một hàm là đủ                        |
+| Test từng thuật toán riêng biệt           |                                                              |
 
-- **Nên dùng khi:** có nhiều biến thể của cùng một thuật toán, ví dụ tính phí, giảm giá, sắp xếp, xác thực; hoặc khi khối if/elif chọn thuật toán lớn dần và hay thay đổi.
-- **Không nên dùng khi:** chỉ có 2–3 nhánh và gần như không bao giờ đổi.
+- **Use when:** có nhiều biến thể của cùng một thuật toán, ví dụ tính phí, giảm giá, sắp xếp, xác thực; hoặc khi khối if/elif chọn thuật toán lớn dần và hay thay đổi.
+- **Avoid when(không nên dùng khi):** chỉ có 2–3 nhánh và gần như không bao giờ đổi.
 
-## 5. Ngoài thực tế
+## 5. Real-world usage
 
 - `sorted(key=...)`, `max(key=...)`, `json.dumps(default=...)`.
 - Django `AUTHENTICATION_BACKENDS`: mỗi backend là một strategy xác thực.
-- Passport.js (Node): đặt luôn tên là *strategies* (`passport-local`, `passport-google`...).
-- **Dễ nhầm với:** **State**. Cấu trúc gần như giống hệt, nhưng ở State các state *biết nhau* và tự chuyển qua lại; còn strategy *độc lập* và do client chọn. Còn khác biệt giữa Strategy và Command thì xem ở [Mục lục](../README.md#các-pattern-dễ-nhầm).
+- Passport.js (Node): đặt luôn tên là _strategies_ (`passport-local`, `passport-google`...).
+- **Commonly confused with:** **State**. Cấu trúc gần như giống hệt, nhưng ở State các state _biết nhau_ và tự chuyển qua lại; còn strategy _độc lập_ và do client chọn. So sánh với Template Method và Command: xem [Mục lục](../README.md#các-pattern-dễ-nhầm).
 
 ---
 
-[← Proxy](../02-structural/proxy.md) · [Mục lục](../README.md) · [Observer →](observer.md)
+[← Facade](../02-structural/facade.md) · [Mục lục](../README.md) · [Template Method →](template-method.md)

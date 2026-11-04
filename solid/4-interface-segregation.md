@@ -2,9 +2,9 @@
 
 > **SOLID** · [← Tổng quan SOLID](README.md)
 
-**Một câu:** Không nên ép một class phải phụ thuộc vào (hay phải implement) **những method mà nó không dùng**. Nhiều interface nhỏ, đúng nhu cầu, tốt hơn một interface to ôm đồm mọi thứ.
+**Definition:** Không ép class phụ thuộc vào (hoặc implement) **những method nó không dùng**. Nhiều interface nhỏ theo đúng nhu cầu tốt hơn một interface lớn gom mọi thứ.
 
-**Ví dụ đời thường:** Một bản mô tả công việc "Nhân viên" bắt người nhận việc làm cả lập trình, lái xe, nấu ăn lẫn kế toán, dù họ chỉ biết một việc. Tách ra thành từng vị trí riêng thì hợp lý hơn.
+**Analogy:** Một job description "Nhân viên" yêu cầu làm cả lập trình, lái xe, nấu ăn lẫn kế toán, trong khi mỗi người chỉ làm một việc. Tách thành từng vị trí riêng mới hợp lý.
 
 ---
 
@@ -14,7 +14,7 @@
 from abc import ABC, abstractmethod
 
 
-class Machine(ABC):                        # interface "béo"
+class Machine(ABC):                        # fat interface
     @abstractmethod
     def print_doc(self, doc): ...
 
@@ -38,7 +38,7 @@ class OldPrinter(Machine):                 # máy in đời cũ, chỉ biết in
 
 - `OldPrinter` phải viết những method **vô nghĩa**, và vì chúng ném lỗi nên nó **vi phạm luôn cả LSP**.
 - Đổi chữ ký của `fax_doc()` thì **mọi class** đều phải sửa theo, kể cả những class không hề fax.
-- Hàm chỉ cần in cũng phải nhận cả interface `Machine` to đùng, và khi test thì phải mock đủ 3 method.
+- Hàm chỉ cần in cũng phải nhận toàn bộ interface `Machine`, và test phải mock đủ 3 method.
 
 ## 2. Solution
 
@@ -68,7 +68,7 @@ class Fax(Protocol):
 
 
 # ----- Implementation: chỉ cài đúng thứ mình hỗ trợ -----
-class OldPrinter:                          # không cần kế thừa: Protocol kiểm tra theo "hình dạng"
+class OldPrinter:                          # không cần kế thừa: Protocol kiểm tra theo cấu trúc
     def print_doc(self, doc):
         print(f"🖨️  In: {doc}")
 
@@ -103,7 +103,7 @@ print(archive(OfficeMachine(), "hop-dong"))
 # archive(OldPrinter(), "x")   ← type checker báo lỗi: OldPrinter không có scan_doc
 ```
 
-> Muốn dùng `ABC` thay cho `Protocol` cũng được: `class OfficeMachine(Printer, Scanner, Fax)`, tức là kế thừa nhiều interface nhỏ cùng lúc.
+> Nếu dùng `ABC` thay cho `Protocol`: `class OfficeMachine(Printer, Scanner, Fax)`, tức là kế thừa nhiều interface nhỏ cùng lúc.
 
 ## 4. Trade-offs
 
@@ -114,18 +114,18 @@ print(archive(OfficeMachine(), "hop-dong"))
 | Dễ mock khi test: interface nhỏ thì fake chỉ cần 1–2 method | |
 | Khả năng của từng class hiện rõ ngay trong type | |
 
-**Thực dụng:** nhóm method theo **nhu cầu của client**, tức là những method thường được dùng cùng nhau. Đừng máy móc tách mỗi method thành một interface.
+**In practice:** nhóm method theo **nhu cầu của client**, tức là những method thường được dùng cùng nhau; không tách máy móc mỗi method thành một interface.
 
-## 5. Dấu hiệu vi phạm và liên hệ pattern
+## 5. Code smells & related patterns
 
-**Dấu hiệu:**
+**Code smells:**
 - Implementation có method chỉ `raise NotImplementedError` hoặc `pass`.
 - Interface có hơn 10 method, và hầu hết client chỉ dùng 2–3 cái.
 - Fake/mock trong test phải giả lập nhiều method không liên quan.
 
-**Liên hệ pattern:**
+**Related patterns:**
 - [Adapter](../02-structural/adapter.md) và [Facade](../02-structural/facade.md) đều đưa ra **đúng interface client cần**, giấu phần còn lại.
-- Ví dụ ISP mẫu mực ngay trong Python: `collections.abc` gồm `Iterable`, `Sized`, `Container`, `Hashable`... Mỗi cái chỉ có 1 method, và một class có thể kết hợp nhiều cái.
+- Ví dụ ISP trong stdlib: `collections.abc` gồm `Iterable`, `Sized`, `Container`, `Hashable`... Mỗi cái chỉ có 1 method, và một class có thể kết hợp nhiều cái.
 
 ## 6. Bài tập
 

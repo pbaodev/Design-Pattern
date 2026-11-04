@@ -2,9 +2,9 @@
 
 > **Nhóm:** Creational · [← Mục lục](../README.md)
 
-**Một câu:** Tách việc **lắp ráp một object phức tạp** ra thành **từng bước**, để cùng một quy trình có thể tạo ra nhiều cấu hình khác nhau.
+**Purpose:** Xây dựng một object phức tạp **theo từng bước**. Cùng một quy trình xây dựng có thể tạo ra nhiều biến thể khác nhau của object.
 
-**Ví dụ đời thường:** Đặt bánh mì kẹp: chọn bánh, chọn nhân, thêm rau, thêm sốt. Bước nào bỏ qua cũng được, còn người làm bánh (builder) lo xếp đúng thứ tự.
+**Analogy:** Đặt bánh mì kẹp: chọn bánh, chọn nhân, thêm rau, thêm sốt. Bước nào cũng có thể bỏ qua; người làm bánh (builder) chịu trách nhiệm ghép đúng thứ tự.
 
 ---
 
@@ -13,9 +13,9 @@
 Cần tạo câu SQL với nhiều phần tùy chọn: cột, điều kiện, sắp xếp, giới hạn.
 
 ```python
-# Cách 1: constructor "khổng lồ"
+# Cách 1: constructor quá nhiều tham số
 q = Query("users", ["id", "name"], ["age > ?"], [18], None, "name", True, 10, None)
-#   ↑ Đọc xong không ai biết None thứ 5, True thứ 7 nghĩa là gì
+#   ↑ Không thể biết None ở vị trí 5 hay True ở vị trí 7 nghĩa là gì
 
 # Cách 2: tự nối chuỗi trong mỗi hàm tìm kiếm
 sql = "SELECT id, name FROM users"
@@ -32,7 +32,7 @@ sql += " LIMIT 10"
 ## 2. Solution
 
 1. Tách việc lắp ráp ra **một class riêng** (Builder).
-2. Mỗi phần là **một method** (`select`, `where`, `limit`...). Method trả về `self` để gọi nối tiếp được (*fluent interface*).
+2. Mỗi phần là **một method** (`select`, `where`, `limit`...). Method trả về `self` để gọi nối tiếp được (_fluent interface_).
 3. Method `build()` **kiểm tra rồi ghép** tất cả theo đúng thứ tự, trả về object kết quả.
 
 ```mermaid
@@ -106,7 +106,7 @@ class QueryBuilder:
         return Query(sql, tuple(self._params))
 
 
-# ----- Client: đọc như một câu văn -----
+# ----- Client: chuỗi lời gọi tự mô tả query -----
 query = (
     QueryBuilder("users")
     .select("id", "name")
@@ -133,9 +133,9 @@ def search_users(min_age: int | None = None, city: str | None = None) -> Query:
 print(search_users(city="HCM").sql)   # SELECT * FROM users WHERE city = ?
 ```
 
-> **Director** (tùy chọn): một class hoặc hàm chứa các "công thức" build có sẵn, ví dụ `active_users_query()`. Dùng khi cùng một chuỗi bước được lặp lại ở nhiều nơi.
+> **Director** (tùy chọn): class hoặc hàm đóng gói sẵn một chuỗi bước build, ví dụ `active_users_query()`. Dùng khi cùng một chuỗi bước lặp lại ở nhiều nơi.
 
-### Pythonic hơn: đôi khi không cần Builder
+### Pythonic approach: đôi khi không cần Builder
 
 Nếu chỉ là **nhiều tham số tùy chọn**, Python đã có keyword arguments, giá trị mặc định và `@dataclass`:
 
@@ -150,26 +150,26 @@ class EmailConfig:
 cfg = EmailConfig("smtp.gmail.com", timeout=10)   # đã rõ ràng, không cần Builder
 ```
 
-Builder chỉ đáng dùng khi object phải **lắp từng bước hoặc có điều kiện**, có **ràng buộc thứ tự**, hoặc cần **kiểm tra trước khi tạo**.
+Builder chỉ cần thiết khi object phải **lắp từng bước hoặc có điều kiện**, có **ràng buộc thứ tự**, hoặc cần **kiểm tra trước khi tạo**.
 
 ## 4. Trade-offs
 
-| ✅ Ưu điểm | ❌ Nhược điểm |
-|---|---|
-| Code tạo object dễ đọc (fluent interface) | Thêm class và nhiều code hơn |
-| Lắp ráp từng bước, có điều kiện, đúng thứ tự | Quá mức cần thiết với object đơn giản (Python đã có kwargs) |
-| Kiểm tra dữ liệu trước khi tạo, product có thể bất biến | Builder giữ state thay đổi được, không nên dùng chung giữa nhiều thread |
-| Cùng một quy trình có thể sinh nhiều biểu diễn (SQL cho MySQL hoặc Postgres) | |
+| ✅ Ưu điểm                                                                   | ❌ Nhược điểm                                                           |
+| ---------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Code tạo object dễ đọc (fluent interface)                                    | Thêm class và nhiều code hơn                                            |
+| Lắp ráp từng bước, có điều kiện, đúng thứ tự                                 | Quá mức cần thiết với object đơn giản (Python đã có kwargs)             |
+| Kiểm tra dữ liệu trước khi tạo, product có thể bất biến                      | Builder giữ state thay đổi được, không nên dùng chung giữa nhiều thread |
+| Cùng một quy trình có thể sinh nhiều biểu diễn (SQL cho MySQL hoặc Postgres) |                                                                         |
 
-- **Nên dùng khi:** object có nhiều phần tùy chọn và phải lắp ráp theo quy trình, ví dụ query, HTTP request, tài liệu, báo cáo.
-- **Không nên dùng khi:** object chỉ có vài tham số và tạo trong 1 bước.
+- **Use when:** object có nhiều phần tùy chọn và phải lắp ráp theo quy trình, ví dụ query, HTTP request, tài liệu, báo cáo.
+- **Avoid when(không nên dùng khi):** object chỉ có vài tham số và tạo trong 1 bước.
 
-## 5. Ngoài thực tế
+## 5. Real-world usage
 
 - SQLAlchemy: `select(User).where(User.age > 18).order_by(User.name).limit(10)`.
 - Django ORM: `User.objects.filter(age__gt=18).order_by("name")[:10]`.
 - Java: `StringBuilder` và annotation `@Builder` của Lombok.
-- **Dễ nhầm với:** Factory Method. Factory Method chọn *class nào* rồi tạo trong 1 bước; Builder *lắp ráp* object qua nhiều bước.
+- **Commonly confused with:** Factory Method. Factory Method chọn _class nào_ rồi tạo trong 1 bước; Builder _lắp ráp_ object qua nhiều bước.
 
 ---
 

@@ -2,9 +2,9 @@
 
 > **Nhóm:** Structural · [← Mục lục](../README.md)
 
-**Một câu:** Cung cấp **một interface đơn giản** cho một hệ thống gồm nhiều thành phần phức tạp.
+**Purpose:** Cung cấp một **interface đơn giản** cho một thư viện, framework hoặc một tập class phức tạp.
 
-**Ví dụ đời thường:** Bạn gọi lễ tân khách sạn: "Đặt giúp tôi taxi ra sân bay lúc 6 giờ sáng." Lễ tân tự liên hệ hãng taxi, báo bếp chuẩn bị đồ ăn sáng mang đi và hẹn giờ gọi báo thức. Bạn không cần biết các bên đó là ai.
+**Analogy:** Bạn gọi lễ tân khách sạn: "Đặt giúp tôi taxi ra sân bay lúc 6 giờ sáng." Lễ tân tự liên hệ hãng taxi, báo bếp chuẩn bị đồ ăn sáng mang đi và hẹn giờ gọi báo thức. Bạn không cần biết các bên đó là ai.
 
 ---
 
@@ -23,12 +23,12 @@ if inventory.check(sku, qty):
 ```
 
 - Client **phụ thuộc vào cả 5 subsystem** và phải biết đúng thứ tự gọi.
-- Cùng một đoạn code bị **lặp lại** ở nhiều nơi. Đổi quy trình, ví dụ thêm bước tích điểm, là phải sửa tất cả.
+- Đoạn code này bị **lặp lại** ở nhiều nơi; đổi quy trình (ví dụ thêm bước tích điểm) phải sửa ở tất cả các nơi đó.
 - Dễ sai thứ tự, ví dụ trừ kho trước khi thanh toán thành công.
 
 ## 2. Solution
 
-Tạo class **Facade** với một method đơn giản là `place_order()`. Bên trong, Facade điều phối các subsystem.
+Tạo class **Facade** với một method `place_order()`, bên trong điều phối các subsystem theo đúng thứ tự.
 
 - Subsystem **không biết** Facade tồn tại.
 - Khi cần tính năng nâng cao, client **vẫn có thể** gọi thẳng subsystem.
@@ -114,28 +114,28 @@ shop.place_order(user_id=42, sku="IPHONE15", qty=1, coupon="SALE10")
 
 > 💡 Trong dự án thật, hãy **truyền** các subsystem vào `__init__` (Dependency Injection) thay vì tự tạo trong đó, để khi test có thể thay bằng mock.
 
-### Pythonic hơn
+### Pythonic approach
 
-Facade không nhất thiết phải là class. Một **hàm** hoặc file `__init__.py` của package export ra vài hàm gọn gàng cũng là Facade.
+Facade không nhất thiết phải là class. Một **hàm**, hoặc `__init__.py` của package export ra vài hàm public, cũng là Facade.
 
 ## 4. Trade-offs
 
-| ✅ Ưu điểm | ❌ Nhược điểm |
-|---|---|
-| Client đơn giản, ít phụ thuộc vào subsystem | Dễ phình thành **God Object** nếu nhồi mọi thứ vào. Khi đó hãy tách thành nhiều facade nhỏ |
-| Đổi bên trong không ảnh hưởng tới client | Che giấu chi tiết, nên nhu cầu đặc biệt vẫn phải gọi thẳng subsystem |
-| Quy trình nằm ở 1 chỗ: không lặp code, không sai thứ tự | |
+| ✅ Ưu điểm                                              | ❌ Nhược điểm                                                                           |
+| ------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Client đơn giản, ít phụ thuộc vào subsystem             | Dễ thành **God Object** nếu dồn quá nhiều logic vào; khi đó tách thành nhiều facade nhỏ |
+| Đổi bên trong không ảnh hưởng tới client                | Chỉ phục vụ use case phổ biến; use case đặc thù vẫn phải gọi thẳng subsystem            |
+| Quy trình nằm ở 1 chỗ: không lặp code, không sai thứ tự |                                                                                         |
 
-- **Nên dùng khi:** hệ thống hoặc thư viện phức tạp mà client chỉ dùng một phần; khi chia layer (service layer chính là facade cho domain và repository).
-- **Không nên dùng khi:** subsystem vốn đã đơn giản. Thêm facade chỉ tạo thêm một lớp thừa.
+- **Use when:** hệ thống hoặc thư viện phức tạp mà client chỉ dùng một phần; khi chia layer (service layer chính là facade cho domain và repository).
+- **Avoid when(không nên dùng khi):** subsystem vốn đã đơn giản; thêm facade chỉ tạo một tầng thừa.
 
-## 5. Ngoài thực tế
+## 5. Real-world usage
 
 - `requests.get(url)`: ẩn `Session`, `PreparedRequest`, `HTTPAdapter` và connection pool của urllib3.
 - `subprocess.run()`: facade gọn gàng bọc ngoài `subprocess.Popen`.
 - Service layer trong kiến trúc nhiều tầng, ví dụ class `OrderService`.
-- **Dễ nhầm với:** **Adapter**. Adapter làm cho một interface *có sẵn* dùng được; Facade tạo một interface *mới, đơn giản hơn*. Cũng dễ nhầm với **Mediator**: ở Mediator các thành phần *biết* mediator và giao tiếp qua nó, còn ở Facade các subsystem *không biết* facade tồn tại.
+- **Commonly confused with:** **Adapter**. Adapter làm cho một interface _có sẵn_ dùng được; Facade tạo một interface _mới, đơn giản hơn_. Cũng dễ nhầm với **Mediator**: ở Mediator các thành phần _biết_ mediator và giao tiếp qua nó, còn ở Facade các subsystem _không biết_ facade tồn tại.
 
 ---
 
-[← Decorator](decorator.md) · [Mục lục](../README.md) · [Proxy →](proxy.md)
+[← Decorator](decorator.md) · [Mục lục](../README.md) · [Strategy →](../03-behavioral/strategy.md)

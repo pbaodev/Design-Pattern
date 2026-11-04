@@ -2,9 +2,9 @@
 
 > **SOLID** · [← Tổng quan SOLID](README.md)
 
-**Một câu:** Ở chỗ nào dùng **class cha** thì thay bằng **class con** chương trình vẫn phải chạy **đúng**. Class con phải giữ đúng "lời hứa" của class cha.
+**Definition:** Mọi chỗ dùng **class cha** đều phải thay được bằng **class con** mà chương trình vẫn chạy **đúng**, nghĩa là class con tuân thủ toàn bộ *contract* của class cha.
 
-**Ví dụ đời thường:** Bạn thuê công ty dịch vụ một "tài xế" để chở hàng. Ai được cử tới cũng phải lái được xe. Nếu họ cử một người mang chức danh tài xế mà không biết lái, hợp đồng coi như bị phá.
+**Analogy:** Thuê tài xế qua một công ty dịch vụ: bất kỳ ai được cử tới đều phải lái được xe. Cử người có chức danh tài xế nhưng không biết lái là vi phạm hợp đồng.
 
 ---
 
@@ -62,20 +62,20 @@ def pay_bills(accounts: list[Account]):
         acc.withdraw(100_000)                 # 💥 crash khi gặp FixedDepositAccount
 ```
 
-Để chữa cháy, code gọi phải thêm `if isinstance(acc, FixedDepositAccount): continue`, và như vậy là vi phạm luôn cả OCP.
+Muốn tránh crash, code gọi phải thêm `if isinstance(acc, FixedDepositAccount): continue`, và như vậy lại vi phạm OCP.
 
-> 💡 Quan hệ **"là một" ngoài đời thực** chưa chắc là **"là một" trong code**. Kế thừa phải dựa trên **hành vi**, không dựa trên cách phân loại khái niệm.
+> 💡 Quan hệ **is-a** trong thực tế chưa chắc là **is-a** trong code. Kế thừa phải dựa trên **hành vi**, không dựa trên cách phân loại khái niệm.
 
 ## 2. Solution
 
-**"Hợp đồng" mà class con phải giữ:**
+**Contract mà class con phải tuân thủ:**
 
-| Quy tắc | Nghĩa là |
+| Quy tắc | Ví dụ |
 |---|---|
-| Không đòi hỏi nhiều hơn | Cha nhận mọi `amount > 0` thì con không được chỉ nhận `amount > 100` |
-| Không hứa ít hơn | Cha luôn trả về `list` thì con không được trả `None` |
-| Không ném exception lạ | Con không được ném lỗi mà code gọi không lường trước (như `NotImplementedError`) |
-| Giữ nguyên bất biến | Ví dụ, chiều rộng và chiều cao của Rectangle độc lập với nhau |
+| Precondition không được chặt hơn | Cha nhận mọi `amount > 0` thì con không được chỉ nhận `amount > 100` |
+| Postcondition không được lỏng hơn | Cha luôn trả về `list` thì con không được trả `None` |
+| Không ném exception mới | Con không được ném lỗi mà caller không lường trước (như `NotImplementedError`) |
+| Giữ nguyên invariant | `width` và `height` của Rectangle độc lập với nhau |
 
 **Cách sửa:** thiết kế lại cây kế thừa theo **khả năng**. Chỉ class nào thật sự rút được tiền mới có `withdraw()`.
 
@@ -94,7 +94,7 @@ class Account:
 class WithdrawableAccount(Account):
     def withdraw(self, amount: int) -> None:
         if amount > self.balance:
-            raise ValueError("Số dư không đủ")    # lỗi nằm trong "hợp đồng" chung, ai gọi cũng lường trước
+            raise ValueError("Số dư không đủ")    # lỗi thuộc contract chung, caller đã biết trước
         self.balance -= amount
 
 
@@ -126,7 +126,7 @@ fixed = FixedDepositAccount("Chi", 10_000_000, term_months=12)
 # pay_bills([fixed], 100_000)   ← mypy/pyright báo lỗi ngay lúc viết code, không phải đợi tới runtime
 ```
 
-**Sửa ví dụ Rectangle/Square:** không cho `Square` kế thừa `Rectangle`. Cả hai cùng implement `Shape`, và là object bất biến nên không còn setter nào phá được hợp đồng:
+**Sửa ví dụ Rectangle/Square:** không cho `Square` kế thừa `Rectangle`. Cả hai implement `Shape` và là immutable object, nên không còn setter nào phá vỡ contract:
 
 ```python
 from abc import ABC, abstractmethod
@@ -166,17 +166,17 @@ print([s.area() for s in (Rect(5, 4), Square(4))])   # [20, 16]
 | Không cần rải `isinstance()` khắp nơi | Đôi khi phải tách thêm class hoặc interface |
 | Cây class phản ánh đúng hành vi thật | Python không kiểm tra LSP lúc runtime, phải dựa vào test và type checker |
 
-**Mẹo:** nếu subclass phải override một method chỉ để **tắt** nó đi, đó là dấu hiệu thiết kế sai. Hãy cân nhắc dùng composition thay cho kế thừa.
+**Tip:** subclass phải override một method chỉ để **vô hiệu hóa** nó là dấu hiệu thiết kế sai; cân nhắc dùng composition thay cho kế thừa.
 
-## 5. Dấu hiệu vi phạm và liên hệ pattern
+## 5. Code smells & related patterns
 
-**Dấu hiệu:**
+**Code smells:**
 - Subclass override bằng `raise NotImplementedError`, hoặc để trống (`pass`) một method có ý nghĩa ở class cha.
 - Code gọi phải `isinstance()` để xử lý riêng từng subclass.
 - Subclass trả về kiểu khác, hoặc `None`, trong khi class cha luôn trả giá trị.
-- Có tài liệu nội bộ ghi kiểu "đừng gọi method X trên class Y".
+- Tài liệu nội bộ có ghi chú kiểu "không gọi method X trên class Y".
 
-**Liên hệ pattern.** [Strategy](../03-behavioral/strategy.md), [Decorator](../02-structural/decorator.md), [Proxy](../02-structural/proxy.md) đều dựa trên việc **thay object này bằng object khác cùng interface**. Nếu một strategy hoặc proxy hành xử khác với hợp đồng, ví dụ ném lỗi lạ, thì client sẽ vỡ. LSP chính là điều kiện để các pattern đó chạy đúng.
+**Related patterns:** [Strategy](../03-behavioral/strategy.md), [Decorator](../02-structural/decorator.md), [Template Method](../03-behavioral/template-method.md) đều dựa trên việc **thay object này bằng object khác cùng interface**. Nếu một strategy hoặc class con hành xử khác contract, ví dụ ném exception mới, client sẽ lỗi. LSP chính là điều kiện để các pattern đó chạy đúng.
 
 ## 6. Bài tập
 
@@ -201,7 +201,7 @@ def migrate(birds: list[Bird]):
 <details>
 <summary><b>Xem đáp án</b></summary>
 
-`Penguin` không giữ được lời hứa "chim nào cũng `fly()` được" của `Bird`, nên `migrate()` sẽ crash. Cách sửa: chỉ đặt `fly()` vào những class thật sự bay được.
+`Penguin` phá contract "mọi `Bird` đều `fly()` được", nên `migrate()` sẽ crash. Cách sửa: chỉ đặt `fly()` vào những class thật sự bay được.
 
 ```python
 class Bird:

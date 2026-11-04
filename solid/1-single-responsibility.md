@@ -2,11 +2,11 @@
 
 > **SOLID** · [← Tổng quan SOLID](README.md)
 
-**Một câu:** Mỗi class chỉ nên có **một lý do để thay đổi**.
+**Definition:** Mỗi class chỉ nên có **một lý do để thay đổi**.
 
-"Trách nhiệm" ở đây **không** có nghĩa là "chỉ làm một việc nhỏ". Nó có nghĩa là class chỉ phục vụ **một nhóm người hoặc một nguồn yêu cầu thay đổi** (ví dụ phòng kinh doanh, đội DBA, bộ phận marketing).
+"Trách nhiệm" ở đây **không** phải "chỉ làm một việc nhỏ", mà là class chỉ phục vụ **một nguồn yêu cầu thay đổi** (*actor*), ví dụ phòng kinh doanh, đội DBA hoặc bộ phận marketing.
 
-**Ví dụ đời thường:** Ở nhà hàng, đầu bếp nấu ăn, thu ngân tính tiền, phục vụ bưng bê. Nếu một người làm hết, chỉ cần đổi thực đơn là việc thu tiền cũng bị xáo trộn theo.
+**Analogy:** Ở nhà hàng, đầu bếp nấu ăn, thu ngân tính tiền, phục vụ bưng bê. Nếu một người kiêm cả ba, chỉ riêng việc đổi thực đơn cũng làm xáo trộn khâu thu tiền.
 
 ---
 
@@ -37,7 +37,7 @@ Class này có **3 lý do để thay đổi**, đến từ 3 nhóm người khá
 | Đội backend / DBA | Đổi SQLite sang PostgreSQL |
 | Marketing | Nội dung email, hoặc chuyển sang gửi SMS |
 
-- Sửa phần email nhưng có thể **vô tình làm hỏng** phần tính tiền, vì cả hai nằm chung một hàm.
+- Sửa phần email có thể **vô tình làm hỏng** phần tính tiền, vì cả hai nằm chung một hàm.
 - Muốn **test logic tính tiền** thì phải có cả database lẫn SMTP server.
 
 ## 2. Solution
@@ -115,21 +115,21 @@ assert PriceCalculator().total(order) == 1_045_000
 | ✅ Được | ❌ Mất |
 |---|---|
 | Class nhỏ, dễ đọc, dễ đặt tên | Nhiều class và file hơn, phải nhảy qua lại khi đọc |
-| Sửa một phần không ảnh hưởng phần khác | Tách quá vụn (mỗi class 1 method) thì khó thấy bức tranh tổng thể |
+| Sửa một phần không ảnh hưởng phần khác | Tách quá nhỏ (mỗi class 1 method) làm mất cái nhìn tổng thể |
 | Test riêng từng phần | |
 | Dùng lại được: `PriceCalculator` dùng luôn cho trang giỏ hàng | |
 
-**Thực dụng:** hãy tách theo **lý do thay đổi**, đừng tách theo số dòng code. Một class 300 dòng nhưng chỉ phục vụ một nghiệp vụ vẫn có thể ổn.
+**In practice:** tách theo **lý do thay đổi**, không theo số dòng code. Một class 300 dòng phục vụ đúng một nghiệp vụ vẫn có thể hợp lý.
 
-## 5. Dấu hiệu vi phạm và liên hệ pattern
+## 5. Code smells & related patterns
 
-**Dấu hiệu:**
+**Code smells:**
 - Tên class có chữ `And`, `Manager`, `Utils`, `Helper`.
 - Mô tả class cần dùng chữ "và": "class này tính tiền **và** lưu DB **và** gửi mail".
 - Một file import từ nhiều tầng khác nhau: DB driver, HTTP client, template email.
-- Xem `git log`: class bị sửa vì nhiều lý do không liên quan gì đến nhau.
+- Xem `git log`: class bị sửa vì nhiều lý do không liên quan tới nhau.
 
-**Liên hệ pattern:**
+**Related patterns:**
 - `OrderService` ở trên chính là một [Facade](../02-structural/facade.md) nhỏ, chỉ điều phối các bước.
 - [Command](../03-behavioral/command.md) tách nơi *ra lệnh* khỏi nơi *thực hiện*.
 
@@ -187,7 +187,7 @@ report = Report("Doanh thu", [{"amount": 100}, {"amount": 250}])
 FileStorage().save(HtmlReportFormatter().format(report), "report.html")
 ```
 
-Cần thêm bản PDF? Viết thêm `PdfReportFormatter`, không phải đụng tới `Report` hay `FileStorage`.
+Cần thêm bản PDF? Viết thêm `PdfReportFormatter`, không phải sửa `Report` hay `FileStorage`.
 
 </details>
 

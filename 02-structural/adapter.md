@@ -2,15 +2,15 @@
 
 > **Nhóm:** Structural · [← Mục lục](../README.md)
 
-**Một câu:** Tạo một lớp trung gian để **chuyển đổi interface** của một class thành interface mà code của bạn mong đợi.
+**Purpose:** Cho phép các object có **interface không tương thích** làm việc được với nhau.
 
-**Ví dụ đời thường:** Cục chuyển đổi ổ cắm khi đi du lịch giúp phích cắm chân tròn của Việt Nam cắm được vào ổ 3 chấu ở Anh. Phích cắm và ổ cắm đều không phải sửa.
+**Analogy:** Bộ chuyển đổi ổ cắm giúp phích chân tròn của Việt Nam cắm được vào ổ 3 chấu ở Anh, trong khi cả phích lẫn ổ đều giữ nguyên.
 
 ---
 
 ## 1. Problem
 
-Toàn bộ app thanh toán qua interface `PaymentGateway.pay(amount_vnd)`. Giờ cần tích hợp SDK của bên thứ 3 là *GlobalPay*, nhưng SDK này có interface hoàn toàn khác:
+Toàn bộ app thanh toán qua interface `PaymentGateway.pay(amount_vnd)`. Giờ cần tích hợp SDK của bên thứ 3 là _GlobalPay_, nhưng SDK này có interface hoàn toàn khác:
 
 ```python
 # Code của bạn: mọi nơi đều gọi theo interface này
@@ -25,8 +25,8 @@ checkout(GlobalPaySDK(), 500_000)
 # 💥 AttributeError: 'GlobalPaySDK' object has no attribute 'pay'
 ```
 
-- Sửa `checkout` và mọi chỗ gọi `pay()` thì thay đổi lan ra khắp app.
-- Sửa SDK thì không được, vì đó là code bên ngoài và sẽ mất khi cập nhật phiên bản.
+- Sửa `checkout` và mọi chỗ gọi `pay()` sẽ kéo theo thay đổi trên toàn app.
+- Không sửa được SDK: đó là code bên thứ 3, mọi thay đổi sẽ mất khi nâng version.
 
 ## 2. Solution
 
@@ -101,27 +101,27 @@ checkout(MomoGateway(), 500_000)                    # MoMo: thanh toán 500,000�
 checkout(GlobalPayAdapter(GlobalPaySDK()), 500_000)  # GlobalPay: charge 20.0 USD
 ```
 
-### Pythonic hơn: duck typing
+### Pythonic approach: duck typing
 
 Python không bắt adapter phải kế thừa `PaymentGateway`, chỉ cần có method `pay()` đúng chữ ký là chạy được. Nếu muốn type checker (mypy, pyright) kiểm tra mà vẫn không cần kế thừa, hãy khai báo interface bằng `typing.Protocol` thay cho `ABC`.
 
 ## 4. Trade-offs
 
-| ✅ Ưu điểm | ❌ Nhược điểm |
-|---|---|
-| Tách logic chuyển đổi ra khỏi logic nghiệp vụ (Single Responsibility) | Thêm một lớp trung gian, code có thêm tầng gián tiếp |
-| Open/Closed: thêm nhà cung cấp mới chỉ cần thêm adapter mới | Nếu sửa được code gốc thì sửa trực tiếp thường đơn giản hơn |
-| Cô lập code bên thứ 3: đổi nhà cung cấp chỉ sửa adapter | |
+| ✅ Ưu điểm                                                            | ❌ Nhược điểm                                               |
+| --------------------------------------------------------------------- | ----------------------------------------------------------- |
+| Tách logic chuyển đổi ra khỏi logic nghiệp vụ (Single Responsibility) | Thêm một tầng indirection                                   |
+| Open/Closed: thêm nhà cung cấp mới chỉ cần thêm adapter mới           | Nếu sửa được code gốc thì sửa trực tiếp thường đơn giản hơn |
+| Cô lập code bên thứ 3: đổi nhà cung cấp chỉ sửa adapter               |                                                             |
 
-- **Nên dùng khi:** tích hợp thư viện hoặc API bên ngoài, code legacy, hoặc bất kỳ class nào bạn **không sửa được**.
-- **Không nên dùng khi:** bạn sở hữu cả hai bên và sửa được cho chúng khớp nhau.
+- **Use when:** tích hợp thư viện hoặc API bên ngoài, code legacy, hoặc bất kỳ class nào bạn **không sửa được**.
+- **Avoid when(không nên dùng khi):** bạn sở hữu cả hai bên và sửa được cho chúng khớp nhau.
 
-## 5. Ngoài thực tế
+## 5. Real-world usage
 
 - SQLAlchemy dialect: đưa nhiều database driver (PostgreSQL, MySQL, SQLite) về chung một interface.
 - `io.TextIOWrapper`: biến một binary stream thành text stream.
-- Hexagonal Architecture, còn gọi là *Ports & Adapters*, lấy luôn tên pattern này.
-- **Dễ nhầm với:** **Facade**. Adapter làm cho một interface *có sẵn* dùng được, thường bọc 1 object. Facade tạo một interface *mới, đơn giản hơn* cho cả một hệ thống. Xem thêm bảng so sánh ở [Mục lục](../README.md#các-pattern-dễ-nhầm).
+- Hexagonal Architecture, còn gọi là _Ports & Adapters_, được đặt tên theo chính pattern này.
+- **Commonly confused with:** **Facade**. Adapter làm cho một interface _có sẵn_ dùng được, thường bọc 1 object. Facade tạo một interface _mới, đơn giản hơn_ cho cả một hệ thống. Xem thêm bảng so sánh ở [Mục lục](../README.md#các-pattern-dễ-nhầm).
 
 ---
 

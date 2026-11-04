@@ -2,9 +2,9 @@
 
 > **Nhóm:** Creational · [← Mục lục](../README.md)
 
-**Một câu:** Đảm bảo một class chỉ có **duy nhất 1 instance**, và cung cấp **một điểm truy cập toàn cục** tới instance đó.
+**Purpose:** Đảm bảo một class chỉ có **một instance duy nhất**, đồng thời cung cấp một điểm truy cập toàn cục (global access point) tới instance đó.
 
-**Ví dụ đời thường:** Mỗi quốc gia chỉ có một chính phủ. Dù bạn hỏi ở đâu, "chính phủ" luôn chỉ về cùng một tổ chức.
+**Analogy:** Mỗi quốc gia chỉ có một chính phủ. Dù bạn hỏi ở đâu, "chính phủ" luôn chỉ về cùng một tổ chức.
 
 ---
 
@@ -29,8 +29,8 @@ Không có gì ngăn người khác gọi `Database()` thêm một lần nữa.
 
 ## 2. Solution
 
-1. **Chặn việc tạo mới tùy tiện.** Trong Python, override `__new__`, là hàm thực sự tạo ra object.
-2. **Lưu instance vào biến của class.** Lần gọi đầu tiên thì tạo, các lần sau trả về instance đã lưu.
+1. **Kiểm soát việc khởi tạo:** override `__new__`, method thực sự tạo object trong Python.
+2. **Lưu instance vào class attribute:** lần gọi đầu tạo mới, các lần sau trả về instance đã lưu.
 
 ```mermaid
 classDiagram
@@ -80,7 +80,7 @@ print(db1 is db2)         # True
 print(db2.queries)        # ['SELECT 1'] → dùng chung trạng thái
 ```
 
-### Pythonic hơn: dùng module
+### Pythonic approach: dùng module
 
 Python chỉ chạy code của một module **1 lần**, dù module đó được import ở bao nhiêu nơi. Vì vậy một biến cấp module đã là singleton:
 
@@ -100,22 +100,22 @@ Trong Python, **nên ưu tiên cách này**. Chỉ dùng cách `__new__` khi b�
 
 ## 4. Trade-offs
 
-| ✅ Ưu điểm | ❌ Nhược điểm |
-|---|---|
-| Chắc chắn chỉ có 1 instance | Thực chất là **biến global trá hình**: tạo phụ thuộc ẩn, khó lần theo |
-| Truy cập được từ mọi nơi | **Khó unit test**: state rò từ test này sang test khác, khó mock |
-| Lazy init: chỉ tạo khi cần | Vi phạm Single Responsibility: vừa làm logic vừa tự quản lý vòng đời |
-| | Phải tự lo thread-safe |
+| ✅ Ưu điểm                  | ❌ Nhược điểm                                                        |
+| --------------------------- | -------------------------------------------------------------------- |
+| Chắc chắn chỉ có 1 instance | Bản chất là **global state**: tạo hidden dependency, khó trace       |
+| Truy cập được từ mọi nơi    | **Khó unit test**: state bị chia sẻ giữa các test, khó mock          |
+| Lazy init: chỉ tạo khi cần  | Vi phạm Single Responsibility: vừa làm logic vừa tự quản lý vòng đời |
+|                             | Phải tự lo thread-safe                                               |
 
-- **Nên dùng khi:** tài nguyên *thật sự* chỉ nên có một, ví dụ config, logger, connection pool, cache.
-- **Không nên dùng khi:** lý do duy nhất là "gọi ở đâu cũng được". Khi đó hãy tạo 1 object rồi **truyền nó vào** nơi cần dùng (Dependency Injection): app vẫn chỉ có 1 instance, nhưng test dễ hơn nhiều.
+- **Use when:** tài nguyên _thật sự_ chỉ nên có một, ví dụ config, logger, connection pool, cache.
+- **Avoid when(không nên dùng khi):** lý do duy nhất là "gọi ở đâu cũng được". Khi đó hãy tạo 1 object rồi **truyền nó vào** nơi cần dùng (Dependency Injection): app vẫn chỉ có 1 instance, nhưng test dễ hơn nhiều.
 
-## 5. Ngoài thực tế
+## 5. Real-world usage
 
 - `logging.getLogger("app")`: cùng một tên luôn trả về cùng một logger.
 - `None`, `True`, `False` trong Python đều là singleton, nên người ta so sánh bằng `is None`.
-- Spring (Java) và NestJS mặc định tạo bean/provider với scope **singleton**, nhưng do DI container quản lý chứ class không tự cài.
-- **Dễ nhầm với:** class chỉ có static method. Static class không có instance, không implement interface được và không truyền đi như một object được.
+- Spring (Java) và NestJS mặc định tạo bean/provider với scope **singleton**, nhưng vòng đời do DI container quản lý, class không tự cài đặt.
+- **Commonly confused with:** class chỉ có static method. Class đó không có instance, nên không implement được interface và không truyền làm tham số được.
 
 ---
 

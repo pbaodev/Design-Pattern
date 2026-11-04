@@ -2,15 +2,15 @@
 
 > **Nhóm:** Structural · [← Mục lục](../README.md)
 
-**Một câu:** **Thêm hành vi** cho một object bằng cách **bọc nó** trong một object khác có **cùng interface**. Có thể bọc nhiều lớp chồng lên nhau.
+**Purpose:** Gắn thêm hành vi cho một object bằng cách đặt nó vào trong một **wrapper object** chứa hành vi đó. Wrapper có cùng interface với object gốc nên có thể bọc chồng nhiều lớp.
 
-**Ví dụ đời thường:** Mặc áo thun, thêm áo len cho ấm, thêm áo mưa để khỏi ướt. Mỗi lớp áo thêm một "tính năng" và cởi ra lúc nào cũng được, còn người mặc vẫn là người đó.
+**Analogy:** Mặc áo thun, khoác thêm áo len cho ấm, rồi áo mưa để khỏi ướt. Mỗi lớp áo thêm một chức năng và có thể cởi ra bất cứ lúc nào, còn người mặc không thay đổi.
 
 ---
 
 ## 1. Problem
 
-Có class `DataSource` để đọc và ghi dữ liệu. Giờ cần thêm **nén**, **mã hóa**, hoặc **cả hai**, tùy trường hợp. Nếu làm bằng kế thừa:
+Class `DataSource` đọc và ghi dữ liệu. Tùy trường hợp, dữ liệu cần được **nén**, **mã hóa**, hoặc **cả hai**. Nếu giải quyết bằng kế thừa:
 
 ```python
 class FileDataSource: ...
@@ -21,14 +21,14 @@ class CompressedEncryptedFileDataSource(FileDataSource): ...
 ```
 
 - Số subclass **tăng theo cấp số nhân** với số tính năng.
-- Kế thừa là **cố định lúc viết code**, không bật tắt được lúc runtime.
+- Kế thừa **cố định từ lúc định nghĩa class**, không bật/tắt được lúc runtime.
 
 ## 2. Solution
 
 1. Decorator **implement cùng interface** với object gốc.
 2. Decorator **giữ tham chiếu** tới object được bọc (`wrappee`).
 3. Mỗi method **chuyển tiếp** lời gọi tới `wrappee` và **thêm hành vi** trước hoặc sau đó.
-4. Vì interface giống nhau nên decorator **bọc được decorator khác**, tức là xếp chồng được.
+4. Vì cùng interface, decorator **bọc được decorator khác**, nên có thể xếp chồng nhiều lớp.
 
 ```mermaid
 classDiagram
@@ -120,7 +120,7 @@ plain = MemoryDataSource()        # cần bản không nén, không mã hóa? D�
 
 > ⚠️ **Thứ tự bọc quan trọng.** Phải nén trước rồi mới mã hóa, vì dữ liệu đã mã hóa gần như không nén được nữa.
 
-### Pythonic hơn: cú pháp `@decorator` cho hàm
+### Pythonic approach: cú pháp `@decorator` cho hàm
 
 Cú pháp `@` của Python áp dụng đúng ý tưởng này ở **cấp hàm**: bọc một hàm, giữ nguyên cách gọi và thêm hành vi.
 
@@ -150,22 +150,22 @@ Các decorator hàm cũng xếp chồng được, ví dụ `@timing` đặt trê
 
 ## 4. Trade-offs
 
-| ✅ Ưu điểm | ❌ Nhược điểm |
-|---|---|
-| Thêm hoặc bớt hành vi lúc runtime, không sửa class gốc | Kết quả phụ thuộc thứ tự bọc, dễ nhầm |
-| Kết hợp tự do nhiều hành vi thay vì 2ⁿ subclass | Khó gỡ một lớp nằm giữa chồng decorator |
-| Single Responsibility: mỗi decorator làm 1 việc | Nhiều lớp bọc làm stack trace dài, debug khó hơn |
-| | Code khởi tạo trông rối, kiểu `A(B(C(D())))` |
+| ✅ Ưu điểm                                             | ❌ Nhược điểm                                    |
+| ------------------------------------------------------ | ------------------------------------------------ |
+| Thêm hoặc bớt hành vi lúc runtime, không sửa class gốc | Kết quả phụ thuộc thứ tự bọc, dễ nhầm            |
+| Kết hợp tự do nhiều hành vi thay vì 2ⁿ subclass        | Khó gỡ một lớp nằm giữa chồng decorator          |
+| Single Responsibility: mỗi decorator làm 1 việc        | Nhiều lớp bọc làm stack trace dài, debug khó hơn |
+|                                                        | Code khởi tạo khó đọc, dạng `A(B(C(D())))`       |
 
-- **Nên dùng khi:** cần các tính năng **tùy chọn, kết hợp linh hoạt** như logging, cache, retry, nén, mã hóa; hoặc khi không kế thừa được (class của thư viện ngoài).
-- **Không nên dùng khi:** chỉ có một biến thể cố định. Khi đó sửa thẳng class cho đơn giản.
+- **Use when:** cần các tính năng **tùy chọn, kết hợp linh hoạt** như logging, cache, retry, nén, mã hóa; hoặc khi không kế thừa được (class của thư viện ngoài).
+- **Avoid when(không nên dùng khi):** chỉ có một biến thể cố định; khi đó sửa trực tiếp class sẽ đơn giản hơn.
 
-## 5. Ngoài thực tế
+## 5. Real-world usage
 
 - Module `io` của Python: `io.BufferedReader(io.FileIO("a.txt"))` và `gzip.GzipFile(fileobj=f)`.
 - Decorator hàm: `@functools.lru_cache`, `@retry` của thư viện tenacity, `@login_required` của Django.
 - Java I/O: `new BufferedReader(new InputStreamReader(stream))`.
-- **Dễ nhầm với:** **Proxy**. Cả hai đều giữ nguyên interface, nhưng Decorator do *client tự lắp* và xếp chồng được để *thêm tính năng*. Proxy thường *tự quản lý* object thật và dùng để *kiểm soát truy cập*.
+- **Commonly confused with:** **Proxy**. Cả hai đều giữ nguyên interface, nhưng Decorator do _client tự lắp_ và xếp chồng được để _thêm tính năng_. Proxy thường _tự quản lý_ object thật và dùng để _kiểm soát truy cập_.
 
 ---
 

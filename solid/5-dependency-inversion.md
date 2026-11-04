@@ -2,13 +2,13 @@
 
 > **SOLID** · [← Tổng quan SOLID](README.md)
 
-**Một câu:** Module cấp cao (nghiệp vụ) **không phụ thuộc** vào module cấp thấp (database, email, API). **Cả hai cùng phụ thuộc vào abstraction.**
+**Definition:** Module cấp cao (nghiệp vụ) **không phụ thuộc** vào module cấp thấp (database, email, API). **Cả hai cùng phụ thuộc vào abstraction.**
 
 Hai ý chính:
 1. Code nghiệp vụ chỉ biết interface, ví dụ `UserRepository`, chứ không biết `PostgresUserRepository`.
 2. Interface do **phía nghiệp vụ định nghĩa** theo nhu cầu của mình, và phần hạ tầng phải implement theo.
 
-**Ví dụ đời thường:** Đèn và laptop không hàn dây thẳng vào đường điện trong tường mà cắm qua **ổ cắm theo chuẩn chung**. Đổi đèn hay đổi nhà cung cấp điện đều không phải đục tường.
+**Analogy:** Đèn và laptop không hàn dây thẳng vào đường điện trong tường mà cắm qua **ổ cắm theo chuẩn chung**. Đổi đèn hay đổi nhà cung cấp điện đều không phải đục tường.
 
 > **DIP khác DI:** DIP (Dependency *Inversion*) là **nguyên lý**. DI (Dependency *Injection*), tức là truyền dependency từ ngoài vào qua constructor, là **kỹ thuật** phổ biến nhất để thực hiện DIP.
 
@@ -19,8 +19,8 @@ Hai ý chính:
 ```python
 class UserService:
     def __init__(self):
-        self.db = MySQLDatabase("mysql://...")       # tự tạo class cụ thể → dính chặt vào MySQL
-        self.mailer = SmtpMailer("smtp.gmail.com")    # dính chặt vào SMTP
+        self.db = MySQLDatabase("mysql://...")       # tự tạo class cụ thể → tight coupling với MySQL
+        self.mailer = SmtpMailer("smtp.gmail.com")    # tight coupling với SMTP
 
     def register(self, email: str):
         if self.db.query("SELECT ... WHERE email = %s", email):
@@ -29,8 +29,8 @@ class UserService:
         self.mailer.send(email, "Chào mừng!")
 ```
 
-- Đổi sang PostgreSQL hay MongoDB thì phải **sửa code nghiệp vụ**, dù quy tắc nghiệp vụ không đổi gì.
-- Unit test `register()` cần **MySQL và SMTP thật**: chậm, khó dựng, và dễ lỡ tay gửi mail thật.
+- Đổi sang PostgreSQL hay MongoDB thì phải **sửa code nghiệp vụ**, dù quy tắc nghiệp vụ không đổi.
+- Unit test `register()` cần **MySQL và SMTP thật**: chậm, khó setup, và có nguy cơ gửi mail thật.
 
 ## 2. Solution
 
@@ -39,7 +39,7 @@ class UserService:
 3. Lớp hạ tầng (Postgres, SMTP) **implement** abstraction.
 4. Ở **composition root** (hàm `main`, file khởi tạo app) mới quyết định lắp class cụ thể nào vào.
 
-Chiều phụ thuộc bị **đảo ngược**: trước đây nghiệp vụ trỏ tới hạ tầng, giờ thì hạ tầng trỏ tới interface của nghiệp vụ.
+Chiều phụ thuộc bị **đảo ngược**: trước đây nghiệp vụ phụ thuộc vào hạ tầng, giờ hạ tầng phụ thuộc vào interface của nghiệp vụ.
 
 ```mermaid
 flowchart LR
@@ -143,27 +143,27 @@ print("✅ Test pass, không cần database")
 | ✅ Được | ❌ Mất |
 |---|---|
 | Đổi hạ tầng (DB, nhà cung cấp email) không phải sửa nghiệp vụ | Thêm interface, và phải lắp ráp ở composition root |
-| Unit test nhanh nhờ dùng fake | "Go to definition" dẫn tới interface chứ không tới code thật, nên lần theo khó hơn |
-| Nghiệp vụ là trung tâm, hạ tầng chỉ là "plugin" (nền tảng của Clean/Hexagonal Architecture) | Interface chỉ có đúng 1 implementation mãi mãi thì thành thừa |
+| Unit test nhanh nhờ dùng fake | "Go to definition" dẫn tới interface thay vì implementation, khó trace hơn |
+| Nghiệp vụ là trung tâm, hạ tầng chỉ là "plugin" (nền tảng của Clean/Hexagonal Architecture) | Interface chỉ có 1 implementation và không bao giờ có thêm là abstraction thừa |
 
-**Thực dụng:** chỉ áp dụng DIP cho những thứ **hay thay đổi hoặc khó test**, tức là I/O như database, network, file, email, thời gian (`now()`). Không cần làm vậy với thư viện ổn định như `json` hay `math`.
+**In practice:** chỉ áp dụng DIP cho những thứ **hay thay đổi hoặc khó test**, tức là I/O như database, network, file, email, thời gian (`now()`). Không cần áp dụng cho thư viện ổn định như `json` hay `math`.
 
-## 5. Dấu hiệu vi phạm và liên hệ pattern
+## 5. Code smells & related patterns
 
-**Dấu hiệu:**
+**Code smells:**
 - `__init__` tự tạo database, HTTP client hoặc SDK cụ thể.
 - File nghiệp vụ import thẳng driver DB hay SDK bên thứ 3.
 - Test phải `mock.patch` khắp nơi, hoặc không chạy được nếu thiếu DB thật.
 - Dùng biến global hoặc [Singleton](../01-creational/singleton.md) để lấy dependency.
 
-**Liên hệ pattern:**
+**Related patterns:**
 - [Adapter](../02-structural/adapter.md): implementation cụ thể thường là một adapter bọc thư viện ngoài cho khớp với interface của nghiệp vụ.
-- [Proxy](../02-structural/proxy.md) và [Decorator](../02-structural/decorator.md) gắn được vào giữa chỉ vì nghiệp vụ phụ thuộc vào interface.
+- [Decorator](../02-structural/decorator.md) gắn được vào giữa chỉ vì nghiệp vụ phụ thuộc vào interface.
 - Framework hỗ trợ DI: `Depends()` của FastAPI, pytest fixtures, container của Spring và NestJS.
 
 ## 6. Bài tập
 
-Làm sao test được câu "nhớ mang ô" mà **không gọi mạng thật**?
+Refactor để test được nhánh "nhớ mang ô" mà **không gọi network thật**.
 
 ```python
 import requests

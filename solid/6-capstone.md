@@ -2,14 +2,14 @@
 
 > **SOLID** · [← Tổng quan SOLID](README.md)
 
-Bài này lấy một đoạn code checkout "đời thực" vi phạm đủ cả 5 nguyên lý, rồi sửa **từng bước**, mỗi bước áp dụng một nguyên lý.
+Bài này lấy một đoạn code checkout vi phạm cả 5 nguyên lý và refactor **từng bước**, mỗi bước áp dụng một nguyên lý.
 
 ---
 
 ## Code ban đầu
 
 ```python
-class PaymentMethod(ABC):                            # ❌ I: interface ôm đồm
+class PaymentMethod(ABC):                            # ❌ I: fat interface
     @abstractmethod
     def pay(self, amount: float) -> None: ...
 
@@ -29,7 +29,7 @@ class CashOnDelivery(PaymentMethod):
     def pay(self, amount):
         print(f"💵 Thu {amount:,.0f}đ khi giao")
 
-    def save_card(self, token):                       # ❌ L + I: bị ép implement, đành ném lỗi
+    def save_card(self, token):                       # ❌ L + I: bị ép implement nên phải ném lỗi
         raise NotImplementedError("COD không có thẻ")
 
 
@@ -58,7 +58,7 @@ class InvoiceService:
 
 | | Vi phạm | Hậu quả |
 |---|---|---|
-| **S** | `checkout()` vừa tính tiền, thanh toán, lưu DB, vừa gửi mail | Sửa nội dung email có thể làm hỏng phần tính tiền |
+| **S** | `checkout()` đảm nhận cả tính tiền, thanh toán, lưu DB và gửi mail | Sửa nội dung email có thể làm hỏng phần tính tiền |
 | **O** | Chuỗi `if/elif` theo `customer_type` | Thêm loại khách nào cũng phải sửa `checkout()` |
 | **L** | `CashOnDelivery.save_card()` ném lỗi | Code gọi phải `isinstance()` để tránh crash |
 | **I** | `PaymentMethod` bắt mọi phương thức thanh toán phải có `save_card()` | COD bị ép implement method vô nghĩa |
@@ -68,7 +68,7 @@ class InvoiceService:
 
 ## Bước 1. S: tách trách nhiệm
 
-Mỗi lý do thay đổi có một class riêng. `InvoiceService` chỉ còn điều phối.
+Mỗi lý do thay đổi ứng với một class; `InvoiceService` chỉ còn điều phối.
 
 ```python
 class PriceCalculator:       # đổi khi: chính sách giá thay đổi
@@ -95,12 +95,12 @@ discounts = {
 # Thêm "student" = thêm 1 dòng, PriceCalculator không phải sửa
 ```
 
-## Bước 3 + 4. L và I: hai vấn đề có chung một gốc
+## Bước 3 + 4. L và I: hai vi phạm cùng nguyên nhân
 
-Vi phạm L (COD ném lỗi) **xuất phát từ** vi phạm I (interface ôm đồm). Chuyện LSP bị vi phạm vì interface quá to là rất thường gặp.
+Vi phạm L (COD ném lỗi) **bắt nguồn từ** vi phạm I (fat interface). Đây là trường hợp rất phổ biến: interface quá lớn buộc class con implement method không phù hợp, dẫn tới vi phạm LSP.
 
-- **I:** `PaymentMethod` chỉ còn đúng một việc mà phương thức thanh toán nào cũng làm được, đó là `pay()`.
-- Việc lưu thẻ là **chuyện riêng của thẻ**, nên chuyển vào trong `CardPayment`.
+- **I:** `PaymentMethod` chỉ còn `pay()`, thao tác mọi phương thức thanh toán đều hỗ trợ.
+- Lưu thẻ là **logic riêng của thanh toán thẻ**, nên chuyển vào `CardPayment`.
 - **L:** từ giờ mọi `PaymentMethod` đều thay thế được cho nhau, `checkout()` không cần `isinstance()` nữa.
 
 ```python
@@ -194,7 +194,7 @@ class CardPayment:
 
     def pay(self, amount):
         print(f"💳 Quẹt thẻ {amount:,.0f}đ")
-        if self._remember:                      # I: lưu thẻ là chuyện riêng của thẻ
+        if self._remember:                      # I: lưu thẻ là logic riêng của CardPayment
             print(f"💾 Lưu thẻ {self._token}")
 
 
@@ -289,13 +289,13 @@ print("✅ Test pass")
 
 Đây chính là mục tiêu của SOLID: **thay đổi chỉ chạm vào đúng một chỗ, và chỗ đó dễ tìm.**
 
-## Có đáng không?
+## Trade-offs
 
-Từ 4 class ban đầu, code giờ có khoảng 12 class, protocol và type, tức là **nhiều code hơn**. Đáng làm khi:
+Từ 4 class ban đầu, code tăng lên khoảng 12 class, protocol và type alias, tức là **nhiều code hơn**. Refactor này đáng làm khi:
 - Yêu cầu **thay đổi thường xuyên** (giá, phương thức thanh toán, kênh thông báo).
 - Code cần **unit test** và được **nhiều người** cùng bảo trì.
 
-Không đáng làm khi viết prototype hay script dùng một lần. Khi đó bản ban đầu có khi lại là lựa chọn đúng. Hãy refactor **khi cái đau thật sự xuất hiện**.
+Với prototype hoặc script dùng một lần, bản ban đầu thường là lựa chọn đúng. Chỉ refactor **khi chi phí thay đổi thực sự xuất hiện**.
 
 ---
 
